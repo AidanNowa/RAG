@@ -70,6 +70,15 @@ class InvertedIndex:
             raise Exception("Invalid token. Term must be 1 token")
         return self.term_frequencies[doc_id][token[0]]    
 
+    def get_bm25_idf(self, term: str) -> float:
+        token = clean_tokens(term)
+        if len(token) != 1:
+            raise Exception("Invalid token. Term must be 1 token")
+        token = token[0]
+        N = len(self.docmap) # total number of couments
+        df = len(self.index[token]) # document frequency
+        return math.log((N - df + 0.5) / (df + 0.5) + 1)
+
 def build_command() -> None:
     print(f"Initalizing index...")
     inverted_index = InvertedIndex()
@@ -123,6 +132,11 @@ def tf_command(doc_id: int, term: str) -> int:
     idx = InvertedIndex()
     idx.load()
     return idx.get_tf(doc_id, term)
+
+def bm25_idf_command(term: str) -> int:
+    idx = InvertedIndex()
+    idx.load()
+    return idx.get_bm25_idf(term)
 
 def has_matching_token(query_tokens: list[str], title_tokens: list[str]) -> bool:
     for q_token in query_tokens:
