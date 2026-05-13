@@ -80,10 +80,11 @@ Retrieve the top-k relevant movies via embedding search, then pass them as conte
 
 ```
 RAG/
-├── cli/                  # Command-line interface for running searches
-├── pyproject.toml        # Project metadata and dependencies
-├── .python-version       # Python version pin
-└── .gitignore
+├── cli/                 
+|     ├── lib/
+|     |    ├── keyword_search.py    # InvertedIndex class, keyword search, and BM25 search functions
+|     |    └── search_utils.py      # General utilities needed for search functions
+|     ├── keyword_search_cli.py     # Command-line interface for running searches
 ```
 
 ---
