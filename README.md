@@ -16,11 +16,11 @@ The goal is to understand how each retrieval strategy works, where it falls shor
 
 | Stage | Method | Status |
 |-------|--------|--------|
-| 1 | Keyword Search | ✅ Implemented |
-| 2 | BM25 Search | ✅ Implemented |
+| 1 | Keyword Search | Implemented |
+| 2 | BM25 Search | Implemented |
 | 3 | Semantic Search | WIP |
-| 4 | Dense Vector / Embedding Search | 🔜 Planned |
-| 5 | RAG (Retrieval + Generation) | 🔜 Planned |
+| 4 | Dense Vector / Embedding Search | Planned |
+| 5 | RAG (Retrieval + Generation) | Planned |
 
 ---
 
@@ -62,18 +62,6 @@ BM25 (Best Match 25) is a probabilistic ranking function that improves significa
 - Performs surprisingly well on precise factual queries (director names, actor names, exact titles)
 - Falls apart on vague or conceptual queries ("something scary but not gory", "movies like Interstellar")
 - Makes clear why we need embeddings: the vocabulary mismatch problem is fundamental to any token-matching approach
-
----
-
-## Roadmap
-
-The limitations identified above directly motivate the next phases:
-
-**Phase 3 — Dense Embedding Search**
-Encode movies and queries as high-dimensional vectors using a sentence transformer model. Semantic similarity replaces token overlap, so "heist" and "robbery" are close neighbors in embedding space.
-
-**Phase 4 — Full RAG Pipeline**
-Retrieve the top-k relevant movies via embedding search, then pass them as context to an LLM. The model synthesizes a natural-language answer grounded in the actual database content — enabling queries like "What's a good sci-fi film about isolation for a Friday night?"
 
 ---
 
