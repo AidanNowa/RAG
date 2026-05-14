@@ -18,8 +18,9 @@ The goal is to understand how each retrieval strategy works, where it falls shor
 |-------|--------|--------|
 | 1 | Keyword Search | ✅ Implemented |
 | 2 | BM25 Search | ✅ Implemented |
-| 3 | Dense Vector / Embedding Search | 🔜 Planned |
-| 4 | RAG (Retrieval + Generation) | 🔜 Planned |
+| 3 | Semantic Search | WIP |
+| 4 | Dense Vector / Embedding Search | 🔜 Planned |
+| 5 | RAG (Retrieval + Generation) | 🔜 Planned |
 
 ---
 
