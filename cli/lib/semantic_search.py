@@ -15,7 +15,7 @@ class SemanticSearch:
         self.documents = None
         self.document_map = {}
 
-    def generate_embeddings(self, text: str):
+    def generate_embedding(self, text: str):
         if not text or not text.strip():
             raise ValueError("cannot generate embedding for empty text")
         return self.model.encode([text])[0]
@@ -52,7 +52,7 @@ def verify_model() -> None:
 
 def embed_text(text: str):
     search_instance = SemanticSearch()
-    embedding = search_instance.generate_embeddings(text)
+    embedding = search_instance.generate_embedding(text)
     print(f"Text: {text}")
     print(f"First 3 dimensions: {embedding[:3]}")
     print(f"Dimensions: {embedding.shape[0]}")
@@ -63,5 +63,15 @@ def verify_embeddings():
     search_instance.load_or_create_embeddings(movies)
     print(f"Number of docs:   {len(movies)}")
     print(f"Embeddings shape: {search_instance.embeddings.shape[0]} vectors in {search_instance.embeddings.shape[1]} dimensions")
+
+def embed_query_text(query):
+    search_instance = SemanticSearch()
+    embedding = search_instance.generate_embedding(query)
+    print(f"Query: {query}")
+    print(f"First 3 dimensions: {embedding[:3]}")
+    print(f"Shape: {embedding.shape}")
+
+
+
 
 
