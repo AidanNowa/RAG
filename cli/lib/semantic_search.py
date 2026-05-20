@@ -2,12 +2,15 @@ import os
 
 import numpy as np
 import re
+import json
 
 from sentence_transformers import SentenceTransformer
 
 from .search_utils import CACHE_DIR, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, load_movies
 
 MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
+MOVIE_CHUNK_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "chunk_embeddings.npy")
+MOVIE_METADATA_PATH = os.path.join(CACHE_DIR, "chunk_metadata.json")
 
 class SemanticSearch:
     def __init__(self, model_name="all-MiniLM-L6-v2") -> None:
@@ -72,6 +75,56 @@ class SemanticSearch:
             )
 
         return result
+
+
+class ChunkedSemanticSearch(SemanticSearch):
+    def __init__(self, model_name="all-MiniLM-L6-v2") -> None:
+        super().__init__(model_name)
+        self.chunk_embeddings = None
+        self.chunk_metadata = None
+    
+
+    def build_chunk_embeddings(self, documents):
+        self.documents = documents
+        all_chunks = []
+        metadata = []
+        for doc in documents:
+            self.document_map[doc['id']] = doc
+            if len(doc['description']) == 0:
+                continue
+            doc_chunks = semantic_chunking(doc['description'], max_chunk_size=4, overlap=1)
+            for i, chunk in enumerate(doc_chunks):
+                all_chunks.append(chunk)
+                metadata.append(
+                    {
+                        "movie_idx": doc['id'], 
+                        "chunk_idx": i, 
+                        "total_chunks": len(doc_chunks)
+                    }
+                )
+        self.chunk_embeddings = self.model.encode(all_chunks, show_progress_bar=True)
+        self.chunk_metadata = metadata
+        os.makedirs(os.path.dirname(MOVIE_CHUNK_EMBEDDINGS_PATH), exist_ok=True)
+        np.save(MOVIE_CHUNK_EMBEDDINGS_PATH, self.chunk_embeddings)
+        
+        with open(MOVIE_METADATA_PATH, 'w') as f:
+            json.dump({"chunks": metadata, "total_chunks": len(all_chunks)}, f, indent=2)
+        
+        return self.chunk_embeddings
+
+
+    def load_or_create_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
+        self.documents = documents
+        for doc in documents:
+            self.document_map[doc['id']] = doc
+        
+        if os.path.exists(MOVIE_CHUNK_EMBEDDINGS_PATH) and os.path.exists(MOVIE_METADATA_PATH):
+            self.chunk_embeddings = np.load(MOVIE_CHUNK_EMBEDDINGS_PATH)
+            with open(MOVIE_METADATA_PATH, 'r') as f:
+                self.chunk_metadata = json.load(f)
+            return self.chunk_embeddings
+        return self.build_chunk_embeddings(documents)
+
 
 def verify_model() -> None:
     search_instance = SemanticSearch()
@@ -164,3 +217,8 @@ def semantic_chunk_text(text: str, max_chunk_size: int=DEFAULT_CHUNK_SIZE, overl
         print(f"{i + 1}. {chunk}")
 
 
+def embed_chunks_command() -> None:
+    search_instance = ChunkedSemanticSearch()
+    movies = load_movies()
+    embeddings = search_instance.load_or_create_chunk_embeddings(movies)
+    print(f"Generated {len(embeddings)} chunked embedings")
