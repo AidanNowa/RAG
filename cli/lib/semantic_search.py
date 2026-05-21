@@ -6,7 +6,7 @@ import json
 
 from sentence_transformers import SentenceTransformer
 
-from .search_utils import CACHE_DIR, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, load_movies
+from .search_utils import CACHE_DIR, DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, load_movies, format_search_result
 
 MOVIE_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "movie_embeddings.npy")
 MOVIE_CHUNK_EMBEDDINGS_PATH = os.path.join(CACHE_DIR, "chunk_embeddings.npy")
@@ -126,6 +126,31 @@ class ChunkedSemanticSearch(SemanticSearch):
         return self.build_chunk_embeddings(documents)
 
 
+    def search_chunks(self, query: str, limit: int=10):
+        query_embedding = self.generate_embedding(query)
+        chunk_score = [dict()]
+        
+        for i, chunk_embedding in enumerate(self.chunk_embeddings):
+            cosine_sim = cosine_similarity(query_embedding, chunk_embedding)
+            chunk_score.append(
+                {
+                    "chunk_idx": i,
+                    "movie_idx": self.chunk_metadata[i]["movie_idx"],
+                    "score": cosine_sim
+                }
+            )            
+        movie_score_map = {}
+        for score in chunk_score:
+            if score["movie_idx"] not in movie_score_map or score["score"] > movie_score_map["movie_idx"]:
+                movie_score_map["movie_idx"] = score["score"]
+        
+        sorted_scores = sorted(movie_score_map, key=lambda x: x[0], reverse=True)
+        
+        results = []
+        for i in range(limit):
+            results.append(format_search_result(sorted_scores[i]))        
+        return results        
+
 def verify_model() -> None:
     search_instance = SemanticSearch()
     print(f"Model loaded: {search_instance.model}")
@@ -221,4 +246,4 @@ def embed_chunks_command() -> None:
     search_instance = ChunkedSemanticSearch()
     movies = load_movies()
     embeddings = search_instance.load_or_create_chunk_embeddings(movies)
-    print(f"Generated {len(embeddings)} chunked embedings")
+    print(f"Generated {len(embeddings)} chunked embeddings")
