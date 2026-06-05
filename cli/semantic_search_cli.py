@@ -1,6 +1,6 @@
 import argparse
 
-from lib.semantic_search import verify_model, embed_text, verify_embeddings, embed_query_text, search_command, chunk_text, semantic_chunk_text, embed_chunks_command
+from lib.semantic_search import verify_model, embed_text, verify_embeddings, embed_query_text, search_command, chunk_text, semantic_chunk_text, embed_chunks_command, search_chunked_command
 
 def main():
     parser = argparse.ArgumentParser(description="Semantic Search CLI")
@@ -32,6 +32,10 @@ def main():
 
     embed_chunks_parser = subparsers.add_parser("embed_chunks", help="Generate chunked semantic embeddings")
 
+    search_chunked_parser = subparsers.add_parser("search_chunked", help="Utilize chunked semantic search to query a database based on input")
+    search_chunked_parser.add_argument("query", type=str, help="Text to be queried")
+    search_chunked_parser.add_argument("--limit", type=int, nargs='?', default=5, help="Maximum amount of movies to return")
+
     args = parser.parse_args()
 
     match args.command:
@@ -51,6 +55,8 @@ def main():
             semantic_chunk_text(args.text, args.max_chunk_size, args.overlap)
         case "embed_chunks":
             embed_chunks_command()
+        case "search_chunked":
+            search_chunked_command(args.query, args.limit)
         case _:
             parser.print_help()
 
