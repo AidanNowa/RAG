@@ -148,17 +148,23 @@ class ChunkedSemanticSearch(SemanticSearch):
                     "movie_idx": self.chunk_metadata[i]["movie_idx"],
                     "score": cosine_sim
                 }
-            )            
-        movie_score_map = {}
-        for score in chunk_score:
-            if score["movie_idx"] not in movie_score_map or score["score"] > movie_score_map["movie_idx"]:
-                movie_score_map["movie_idx"] = score["score"]
-        
-        sorted_scores = sorted(movie_score_map, key=lambda x: x[0], reverse=True)
-        
+            )           
+        movie_score_map = {} 
+        for i in range(1, len(chunk_score)):
+            score = chunk_score[i]
+            if score["movie_idx"] not in movie_score_map or score["score"] > movie_score_map[score["movie_idx"]]:
+                movie_score_map[score["movie_idx"]] = score["score"]
+        #print(movie_score_map) 
+        sorted_scores = dict(sorted(movie_score_map.items(), key=lambda item: item[1], reverse=True))
+        #sorted_scores = sorted(movie_score_map, key=lambda x: x[0], reverse=True)
+
         results = []
         for i in range(limit):
-            results.append(format_search_result(sorted_scores[i]))        
+            movie_idx = list(sorted_scores.keys())[i]
+            doc = self.documents[movie_idx]
+            #print(self.documents[movie_idx])
+            #print(f"{movie_idx}: {sorted_scores[movie_idx]}")
+            results.append(format_search_result(movie_idx, doc["title"], doc["description"][:100], sorted_scores[movie_idx]))        
         return results        
 
 def verify_model() -> None:
@@ -265,6 +271,6 @@ def search_chunked_command(text: str, limit: int=5) -> None:
     embeddings = search_instance.load_or_create_chunk_embeddings(movies)
     results = search_instance.search_chunks(text, limit)
     for i, result in enumerate(results):
-        print(f"\n{i}. {movies[result.movie_idx]["title"]} (score: {result.score:.4f})")
-        print(f"    {movies[result.movie_idx]}...")
+        print(f"\n{i}. {result["title"]} (score: {result["score"]:.4f})")
+        print(f"    {result["document"]}...")
     
