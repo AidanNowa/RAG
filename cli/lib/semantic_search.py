@@ -84,16 +84,16 @@ class ChunkedSemanticSearch(SemanticSearch):
         self.chunk_metadata = None
     
 
-    def build_chunk_embeddings(self, documents):
+    def build_chunk_embeddings(self, documents: list[dict]) -> np.ndarray:
         self.documents = documents
         self.document_map = {}
         for doc in documents:
-            self.document_map[doc["id"]] = odc
+            self.document_map[doc["id"]] = doc
 
         all_chunks = []
         metadata = []
 
-        for ix, doc in enumerate(documents):
+        for idx, doc in enumerate(documents):
             text = doc.get("description", "")
             if not text.strip():
                 continue
@@ -140,30 +140,33 @@ class ChunkedSemanticSearch(SemanticSearch):
         query_embedding = self.generate_embedding(query)
         chunk_score = [dict()]
         
+        curr_movie_idx = None
+        chunk_idx = None
         for i, chunk_embedding in enumerate(self.chunk_embeddings):
+            if self.chunk_metadata[i]["movie_idx"] != curr_movie_idx:
+                chunk_idx = 0
+                curr_movie_idx = self.chunk_metadata[i]["movie_idx"]
             cosine_sim = cosine_similarity(query_embedding, chunk_embedding)
             chunk_score.append(
                 {
-                    "chunk_idx": i,
+                    "chunk_idx": chunk_idx,
                     "movie_idx": self.chunk_metadata[i]["movie_idx"],
                     "score": cosine_sim
                 }
             )           
+            chunk_idx += 1
         movie_score_map = {} 
         for i in range(1, len(chunk_score)):
             score = chunk_score[i]
             if score["movie_idx"] not in movie_score_map or score["score"] > movie_score_map[score["movie_idx"]]:
                 movie_score_map[score["movie_idx"]] = score["score"]
-        #print(movie_score_map) 
+        
         sorted_scores = dict(sorted(movie_score_map.items(), key=lambda item: item[1], reverse=True))
-        #sorted_scores = sorted(movie_score_map, key=lambda x: x[0], reverse=True)
 
         results = []
         for i in range(limit):
             movie_idx = list(sorted_scores.keys())[i]
             doc = self.documents[movie_idx]
-            #print(self.documents[movie_idx])
-            #print(f"{movie_idx}: {sorted_scores[movie_idx]}")
             results.append(format_search_result(movie_idx, doc["title"], doc["description"][:100], sorted_scores[movie_idx]))        
         return results        
 
@@ -271,6 +274,6 @@ def search_chunked_command(text: str, limit: int=5) -> None:
     embeddings = search_instance.load_or_create_chunk_embeddings(movies)
     results = search_instance.search_chunks(text, limit)
     for i, result in enumerate(results):
-        print(f"\n{i}. {result["title"]} (score: {result["score"]:.4f})")
+        print(f"\n{i+1}. {result["title"]} (score: {result["score"]:.4f})")
         print(f"    {result["document"]}...")
     
